@@ -8,9 +8,8 @@ import json
 from datetime import datetime
 from loguru import logger
 
-from fake_fs import FAKE_FS, FAKE_FILES, SENSITIVE_FILES, resolve_path
-from ai_bridge import ask_ai
-
+from core.ssh.fake_fs import FAKE_FS, FAKE_FILES, SENSITIVE_FILES, resolve_path
+from ai.aiBridge import ask_ai
 
 # --------------------------
 # Command dispatcher

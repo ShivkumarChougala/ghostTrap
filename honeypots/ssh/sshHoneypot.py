@@ -1,8 +1,5 @@
-"""
-GhostTrap - ssh_honeypot.py
-Main entrypoint. Handles SSH transport, auth, banner, and spawns shell sessions.
-All shell logic lives in shell_input.py, command_handler.py, fake_fs.py, ai_bridge.py.
-"""
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 import socket
 import threading
@@ -14,9 +11,8 @@ import paramiko
 from datetime import datetime
 from loguru import logger
 
-from shell_input import run_shell
-from command_handler import handle_command
-
+from core.ssh.shell_input import run_shell
+from core.ssh.command_handler import handle_command
 # --------------------------
 # Config
 # --------------------------
@@ -190,4 +186,4 @@ def start_honeypot(port=22):
 
 
 if __name__ == "__main__":
-    start_honeypot(port=22)
+    start_honeypot(port=69)

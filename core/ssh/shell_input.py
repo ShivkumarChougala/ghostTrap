@@ -8,8 +8,7 @@ import json
 from datetime import datetime
 from loguru import logger
 
-from fake_fs import FAKE_FS, resolve_path
-
+from core.ssh.fake_fs import FAKE_FS, resolve_path
 # --------------------------
 # Known shell commands for tab completion
 # --------------------------

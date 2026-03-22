@@ -1,6 +1,6 @@
-# Keys
+# SSH server key - NEVER commit this
+server.key
 *.key
-*.pub
 *.pem
 
 # Logs
@@ -11,19 +11,8 @@ logs/
 __pycache__/
 *.pyc
 *.pyo
-*.pyd
-.Python
-env/
-venv/
 .env
-
-# Docker volumes
-elastic_data/
+venv/
 
 # OS
 .DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
