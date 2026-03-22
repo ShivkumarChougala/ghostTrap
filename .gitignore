@@ -1,5 +1,3 @@
-# SSH server key - NEVER commit this
-server.key
 *.key
 *.pem
 
