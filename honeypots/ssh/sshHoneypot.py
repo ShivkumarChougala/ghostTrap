@@ -13,6 +13,9 @@ from core.ssh.shell_input import run_shell
 from core.ssh.command_handler import handle_command
 ## database
 from database.db import create_session, log_login_attempt, end_session
+from database.ip_enrich import enrich_ip
+
+
 # --------------------------
 # Config
 # --------------------------
@@ -112,6 +115,8 @@ def handle_client(client_socket, client_ip):
         "ai_calls":      0
     }
     create_session(session)
+    enrich_ip(client_ip)
+
     transport = None
     try:
         transport = paramiko.Transport(client_socket)
