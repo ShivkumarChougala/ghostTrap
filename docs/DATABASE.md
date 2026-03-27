@@ -8,7 +8,7 @@ The database is deployed on a **separate VM (Proxmox)** to ensure isolation, sca
 
 ---
 
-## 🧱 Architecture
+## Step 1 - Architecture
 
 ```
 [Attacker]
@@ -22,7 +22,7 @@ The database is deployed on a **separate VM (Proxmox)** to ensure isolation, sca
 
 ---
 
-## ⚙️ Database Configuration
+## Step 2 - Database Configuration
 
 | Component     | Value            |
 | ------------- | ---------------- |
@@ -33,7 +33,7 @@ The database is deployed on a **separate VM (Proxmox)** to ensure isolation, sca
 
 ---
 
-## 🛠️ Setup
+## Step 3 - Setup
 
 ### Create Database & User
 
@@ -54,7 +54,7 @@ ALTER SCHEMA public OWNER TO ghosttrap_user;
 
 ---
 
-## 📊 Database Schema
+## Step 4 -  Database Schema
 
 ### 1. Sessions
 
@@ -140,7 +140,7 @@ CREATE TABLE ip_intel (
 
 ---
 
-## ⚡ Indexes (Performance)
+## Step 5 -  Indexes (Performance)
 
 ```sql
 CREATE INDEX idx_sessions_src_ip ON sessions(src_ip);
@@ -154,7 +154,7 @@ CREATE INDEX idx_ip_intel_ip ON ip_intel(ip);
 
 ---
 
-## 🔐 Security Configuration
+## Step 6 -  Security Configuration
 
 ### Enable Remote Access
 
@@ -174,7 +174,7 @@ host    ghosttrap    ghosttrap_user    192.168.31.0/24    md5
 
 ---
 
-## 🧠 Data Collection Flow
+## Step 7 -  Data Collection Flow
 
 1. **Session Created** → on SSH connection
 2. **Login Attempts Logged** → each credential try
@@ -183,7 +183,7 @@ host    ghosttrap    ghosttrap_user    192.168.31.0/24    md5
 
 ---
 
-## 🧪 Verification Queries
+##  Verification Queries
 
 ```sql
 SELECT session_id, src_ip, start_time, end_time FROM sessions;
@@ -198,11 +198,4 @@ ORDER BY id DESC;
 
 ---
 
-## ✅ Status
-
-* SSH honeypot fully integrated with PostgreSQL
-* Real attacker data successfully captured
-* End-to-end pipeline verified
-
----
 
