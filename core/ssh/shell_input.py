@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 from loguru import logger
 from core.ssh.fake_fs import FAKE_FS, resolve_path
-
+from database.db import log_command
 # --------------------------
 # Known shell commands for tab completion
 # --------------------------
@@ -43,10 +43,10 @@ def build_prompt(cwd, user="ubuntu", hostname=HOSTNAME):
 # --------------------------
 ESC = b'\x1b'
 TAB = b'\x09'
-UP_ARROW = '[A'
-DOWN_ARROW = '[B'
+UP_ARROW    = '[A'
+DOWN_ARROW  = '[B'
 RIGHT_ARROW = '[C'
-LEFT_ARROW = '[D'
+LEFT_ARROW  = '[D'
 
 # --------------------------
 # Main shell loop
@@ -59,13 +59,14 @@ def run_shell(channel, session, handle_command_fn):
         session           : session dict (cwd, history, client_ip, session_id, ...)
         handle_command_fn : handle_command(cmd, session) from command_handler.py
     """
-    buf = ""
-    history = []
-    hist_idx = -1
+    buf        = ""
+    history    = []
+    hist_idx   = -1
     escape_buf = ""
-    in_escape = False
+    in_escape  = False
+
     channel.send(build_prompt(session["cwd"], session["user"]))
-    
+
     while True:
         try:
             data = channel.recv(1)
@@ -73,7 +74,7 @@ def run_shell(channel, session, handle_command_fn):
             break
         if not data:
             break
-        
+
         # ── Mid escape sequence ───────────────────────────────────────────
         if in_escape:
             escape_buf += data.decode("utf-8", errors="ignore")
@@ -87,13 +88,13 @@ def run_shell(channel, session, handle_command_fn):
             elif escape_buf in (RIGHT_ARROW, LEFT_ARROW):
                 action = "skip"
             else:
-                in_escape = False
+                in_escape  = False
                 escape_buf = ""
                 continue
-            
-            in_escape = False
+
+            in_escape  = False
             escape_buf = ""
-            
+
             if action == "up":
                 if history and hist_idx < len(history) - 1:
                     hist_idx += 1
@@ -109,28 +110,28 @@ def run_shell(channel, session, handle_command_fn):
                     buf = ""
                     _redraw(channel, session["cwd"], buf, session["user"])
             continue
-        
+
         # ── ESC byte ──────────────────────────────────────────────────────
         if data == ESC:
-            in_escape = True
+            in_escape  = True
             escape_buf = ""
             continue
-        
+
         # ── Backspace ─────────────────────────────────────────────────────
         if data in (b'\x7f', b'\x08'):
             if buf:
                 buf = buf[:-1]
                 channel.send(b'\x08 \x08')
             continue
-        
+
         # ── Ctrl-C ────────────────────────────────────────────────────────
         if data == b'\x03':
-            buf = ""
+            buf      = ""
             hist_idx = -1
             channel.send(b'^C\r\n')
             channel.send(build_prompt(session["cwd"], session["user"]))
             continue
-        
+
         # ── Ctrl-L (clear screen) ─────────────────────────────────────────
         if data == b'\x0c':
             channel.send(b'\033[2J\033[H')
@@ -138,13 +139,13 @@ def run_shell(channel, session, handle_command_fn):
             if buf:
                 channel.send(buf.encode())
             continue
-        
+
         # ── Enter ─────────────────────────────────────────────────────────
         try:
             char = data.decode("utf-8")
         except UnicodeDecodeError:
             continue
-        
+
         if char in ("\r", "\n"):
             channel.send(b'\r\n')
             cmd = buf.strip()
@@ -154,23 +155,30 @@ def run_shell(channel, session, handle_command_fn):
                 hist_idx = -1
                 logger.info(json.dumps({
                     "timestamp": datetime.now().isoformat(),
-                    "event": "ssh_command",
-                    "src_ip": session["client_ip"],
-	       	    "user": session["user"],
-                    "command": cmd,
-                    "cwd": session["cwd"],
-                    "honeypot": "ssh",
+                    "event":     "ssh_command",
+                    "src_ip":    session["client_ip"],
+                    "user":      session["user"],
+                    "command":   cmd,
+                    "cwd":       session["cwd"],
+                    "honeypot":  "ssh",
                     "session_id": session["session_id"]
                 }))
                 print(f"[CMD] {session['client_ip']} ran: {cmd}")
                 response = handle_command_fn(cmd, session)
+                log_command(
+                    session_id=session["session_id"],
+                    src_ip=session["client_ip"],
+                    command=cmd,
+                    output="" if response == "EXIT" or response is None else str(response),
+                    cwd=session["cwd"]
+                )
                 if response == "EXIT":
                     channel.send(b'logout\r\n')
                     break
                 session["history"].append({
-                    "command": cmd,
-                    "response": response,
-                    "cwd": session["cwd"],
+                    "command":   cmd,
+                    "response":  response,
+                    "cwd":       session["cwd"],
                     "timestamp": datetime.now().isoformat()
                 })
                 if len(session["history"]) > 50:
@@ -181,17 +189,16 @@ def run_shell(channel, session, handle_command_fn):
             buf = ""
             channel.send(build_prompt(session["cwd"], session["user"]))
             continue
-        
+
         # ── Tab completion ────────────────────────────────────────────────
         if data == TAB:
             buf = _handle_tab(channel, session["cwd"], buf, session["user"])
             continue
-        
+
         # ── Printable char ────────────────────────────────────────────────
         if char.isprintable():
             buf += char
             channel.send(char.encode())
-
 
 # --------------------------
 # Helpers
@@ -202,17 +209,16 @@ def _redraw(channel, cwd, buf, user="ubuntu"):
     if buf:
         channel.send(buf.encode())
 
-
 def _handle_tab(channel, cwd, buf, user="ubuntu"):
     """
     Tab completion logic.
-    - First word → complete against KNOWN_COMMANDS
-    - Second word onwards → complete against fake filesystem entries
+    - First word  → complete against KNOWN_COMMANDS
+    - Second word → complete against fake filesystem entries
     Behaves like bash: single match autocompletes, multiple matches prints list.
     """
     parts = buf.split(" ")
     if len(parts) == 1:
-        prefix = parts[0]
+        prefix  = parts[0]
         matches = [c for c in KNOWN_COMMANDS if c.startswith(prefix)]
         if not matches:
             return buf
@@ -227,16 +233,16 @@ def _handle_tab(channel, cwd, buf, user="ubuntu"):
         channel.send(build_prompt(cwd, user))
         channel.send(buf.encode())
         return buf
-    
-    prefix = parts[-1]
+
+    prefix    = parts[-1]
     completed = _complete_path(cwd, prefix)
     if not completed:
         return buf
-    
+
     if len(completed) == 1:
-        parts[-1] = completed[0]
-        new_buf = " ".join(parts)
-        full_path = resolve_path(cwd, completed[0])
+        parts[-1]  = completed[0]
+        new_buf    = " ".join(parts)
+        full_path  = resolve_path(cwd, completed[0])
         if full_path in FAKE_FS:
             new_buf += "/"
         else:
@@ -245,13 +251,12 @@ def _handle_tab(channel, cwd, buf, user="ubuntu"):
         channel.send(build_prompt(cwd, user))
         channel.send(new_buf.encode())
         return new_buf
-    
+
     channel.send(b'\r\n')
     channel.send(("  ".join(completed) + "\r\n").encode())
     channel.send(build_prompt(cwd, user))
     channel.send(buf.encode())
     return buf
-
 
 def _complete_path(cwd, prefix):
     """
@@ -260,18 +265,18 @@ def _complete_path(cwd, prefix):
     """
     if prefix.startswith("/"):
         if "/" in prefix[1:]:
-            dir_part = prefix.rsplit("/", 1)[0] or "/"
+            dir_part  = prefix.rsplit("/", 1)[0] or "/"
             name_part = prefix.rsplit("/", 1)[1]
         else:
-            dir_part = "/"
+            dir_part  = "/"
             name_part = prefix[1:]
     else:
         if "/" in prefix:
-            dir_part = resolve_path(cwd, prefix.rsplit("/", 1)[0])
+            dir_part  = resolve_path(cwd, prefix.rsplit("/", 1)[0])
             name_part = prefix.rsplit("/", 1)[1]
         else:
-            dir_part = cwd
+            dir_part  = cwd
             name_part = prefix
-    
+
     entries = FAKE_FS.get(dir_part, [])
     return [e for e in entries if e.startswith(name_part)]
