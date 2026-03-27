@@ -1,4 +1,4 @@
-#GhostTrap — PostgreSQL Database Integration
+# GhostTrap — PostgreSQL Database Integration
 
 ## Overview
 
