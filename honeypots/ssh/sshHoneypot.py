@@ -16,7 +16,9 @@ from core.ssh.command_handler import handle_command
 # --------------------------
 # Config
 # --------------------------
-HOST_KEY    = paramiko.RSAKey(filename='server.key')
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+HOST_KEY = paramiko.RSAKey(filename=os.path.join(BASE_DIR, 'server.key'))
 FAKE_BANNER = "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.6"
 
 logger.add("/opt/ghosttrap/ssh_honeypot.log", rotation="10 MB")
@@ -41,7 +43,8 @@ class FakeSSHServer(paramiko.ServerInterface):
         logger.info({
             "timestamp":   datetime.now().isoformat(),
             "event":       "ssh_login_attempt",
-            "src_ip":      self.client_ip,
+            "src_ip":      self.client_ip,	
+	    "final_user":     self.session["user"],
             "username":    username,
             "password":    password,
             "attempt":     self.session["attempt_count"],
@@ -110,11 +113,13 @@ Last login: Fri Mar 13 20:13:21 2026 from 192.168.56.1""".strip()
 def handle_client(client_socket, client_ip):
     session = {
         "client_ip":     client_ip,
-        "cwd":           "/root",
+        "cwd":           "/home/ubuntu",
+	"user": "ubuntu",  
         "attempt_count": 0,
         "history":       [],
         "session_id":    str(uuid.uuid4()),
-        "start_time":    datetime.now()
+        "start_time":    datetime.now(),
+	"ai_calls":      0
     }
     transport = None
 
@@ -159,16 +164,6 @@ def handle_client(client_socket, client_ip):
         if transport:
             transport.close()
 
-
-
-
-
-
-
-
-
-
-
 #
 #
 #
@@ -191,8 +186,6 @@ def show_banner(port):
 
 
 
-
-
 # --------------------------
 # Entrypoint
 # --------------------------
@@ -202,10 +195,7 @@ def start_honeypot(port=22):
     server_socket.bind(("0.0.0.0", port))
     server_socket.listen(100)
 
-    print("[*] GhostTrap AI-Powered SSH Honeypot")
-    print(f"[*] Listening on port {port}")
-    print("[*] Mode: HIGH INTERACTION + AI")
-    print("[*] Waiting for attackers...\n")
+    show_banner(port)
 
     while True:
         client_socket, addr = server_socket.accept()
