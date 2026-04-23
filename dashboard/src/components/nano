@@ -1,0 +1,48 @@
+const severityStyles = {
+  CRITICAL: {
+    background: "#7f1d1d",
+    color: "#fecaca",
+    border: "1px solid #b91c1c",
+  },
+  HIGH: {
+    background: "#7c2d12",
+    color: "#fdba74",
+    border: "1px solid #ea580c",
+  },
+  MEDIUM: {
+    background: "#78350f",
+    color: "#fde68a",
+    border: "1px solid #d97706",
+  },
+  LOW: {
+    background: "#1e3a8a",
+    color: "#bfdbfe",
+    border: "1px solid #2563eb",
+  },
+  NONE: {
+    background: "#1f2937",
+    color: "#cbd5e1",
+    border: "1px solid #475569",
+  },
+};
+
+export default function SeverityBadge({ severity = "NONE" }) {
+  const style = severityStyles[severity] || severityStyles.NONE;
+
+  return (
+    <span
+      style={{
+        ...style,
+        padding: "4px 10px",
+        borderRadius: "999px",
+        fontSize: "12px",
+        fontWeight: 700,
+        display: "inline-block",
+        minWidth: "78px",
+        textAlign: "center",
+      }}
+    >
+      {severity}
+    </span>
+  );
+}
