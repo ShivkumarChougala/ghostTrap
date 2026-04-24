@@ -12,16 +12,21 @@ from database.ip_enrich import enrich_ip
 def get_next_ip(conn):
     cur = conn.cursor()
     cur.execute("""
-        SELECT DISTINCT split_part(s.src_ip::text, '/', 1) AS ip
+        SELECT DISTINCT host(s.src_ip) AS ip
         FROM sessions s
         LEFT JOIN ip_intel i
-        ON split_part(s.src_ip::text, '/', 1) = i.ip::text
+          ON host(s.src_ip) = host(i.ip)
         WHERE i.ip IS NULL
+        ORDER BY ip
         LIMIT 1;
     """)
     row = cur.fetchone()
     cur.close()
-    return row["ip"] if row else None
+
+    if not row:
+        return None
+
+    return row["ip"]
 
 
 def main():
@@ -41,7 +46,11 @@ def main():
             print(f"[+] Enriching {ip}")
             enrich_ip(ip)
 
-            time.sleep(1.5)  # rate limit safe
+            time.sleep(1.5)
+
+        except KeyboardInterrupt:
+            print("[!] Worker stopped by user")
+            break
 
         except Exception as e:
             print(f"[!] Worker error: {e}")
