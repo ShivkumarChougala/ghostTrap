@@ -1,3 +1,22 @@
+const pulseKeyframes = `
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239,68,68,0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 18px rgba(239,68,68,0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239,68,68,0);
+  }
+}
+`;
+if (typeof document !== "undefined" && !document.getElementById("pulse-keyframes")) {
+  const style = document.createElement("style");
+  style.id = "pulse-keyframes";
+  style.innerHTML = pulseKeyframes;
+  document.head.appendChild(style);
+}
 export const styles = {
   page: {
     minHeight: "100vh",
@@ -5,6 +24,219 @@ export const styles = {
     padding: "32px 24px 40px",
     fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
+activityItem: {
+  display: "grid",
+  gridTemplateColumns: "120px 1fr 100px",
+  gap: "12px",
+  padding: "14px",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
+  alignItems: "center",
+},
+threatBanner: {
+  background: "linear-gradient(90deg, rgba(239,68,68,0.16), rgba(245,158,11,0.14))",
+  border: "1px solid rgba(239,68,68,0.25)",
+  padding: "14px 18px",
+  borderRadius: "16px",
+  fontWeight: 700,
+  marginBottom: "18px",
+  color: "#fecaca",
+},
+
+aiBox: {
+  background: "rgba(61,217,255,0.08)",
+  border: "1px solid rgba(61,217,255,0.2)",
+  padding: "16px",
+  borderRadius: "14px",
+  color: "#9feaff",
+  lineHeight: 1.6,
+},
+
+commandThreatList: {
+  display: "grid",
+  gap: 12,
+},
+countBadge: {
+  background: "rgba(255,255,255,0.06)",
+  padding: "6px 10px",
+  borderRadius: 10,
+  fontSize: 13,
+  fontWeight: 700,
+  minWidth: 36,
+  textAlign: "center",
+},
+countText: {
+  fontSize: 16,
+  fontWeight: 800,
+  color: "#e5edf8",
+},
+ipIntelGrid: {
+  display: "grid",
+  gridTemplateColumns: "0.9fr 1fr 1.4fr",
+  gap: 24,
+  width: "100%",
+  overflow: "hidden",
+},
+
+
+smallTitle: {
+  margin: "0 0 12px",
+  fontSize: 14,
+  color: "#8ea0b8",
+},
+
+coverageBox: {
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 16,
+  padding: 18,
+  background: "rgba(255,255,255,0.03)",
+  display: "grid",
+  gap: 14,
+  minWidth: 0,
+},
+
+bigNumber: {
+  fontSize: 36,
+  fontWeight: 900,
+  color: "#38bdf8",
+},
+
+coverageStats: {
+  display: "grid",
+  gap: 8,
+  color: "#cbd5e1",
+  fontSize: 13,
+},
+
+intelRow: {
+  display: "grid",
+  gridTemplateColumns: "1fr auto",
+  gap: 12,
+  padding: "11px 0",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
+  color: "#dbeafe",
+  fontSize: 13,
+  minWidth: 0,
+},
+alertList: {
+  display: "grid",
+  gap: 12,
+},
+
+alertItem: {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: 14,
+  borderRadius: 14,
+},
+
+alertTitle: {
+  fontSize: 14,
+  fontWeight: 700,
+  color: "#e5edf8",
+},
+
+alertSub: {
+  fontSize: 12,
+  color: "#8ea0b8",
+  marginTop: 4,
+},
+
+alertTime: {
+  fontSize: 12,
+  color: "#94a3b8",
+},
+
+intelBlock: {
+  marginBottom: 12,
+},
+
+intelBar: {
+  height: 6,
+  background: "rgba(255,255,255,0.06)",
+  borderRadius: 999,
+  overflow: "hidden",
+  marginTop: 6,
+},
+
+intelFill: {
+  height: "100%",
+  background: "linear-gradient(90deg,#ef4444,#f59e0b)",
+  borderRadius: 999,
+},
+
+intelFillAlt: {
+  height: "100%",
+  background: "linear-gradient(90deg,#38bdf8,#8b5cf6)",
+  borderRadius: 999,
+},
+
+intelText: {
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+},
+
+commandThreatItem: {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: 14,
+  alignItems: "center",
+  padding: 14,
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 14,
+  background: "rgba(255,255,255,0.03)",
+},
+
+commandText: {
+  fontFamily: "monospace",
+  color: "#dbeafe",
+  fontSize: 14,
+},
+
+commandSub: {
+  color: "#8ea0b8",
+  fontSize: 12,
+  marginTop: 5,
+},
+
+commandRight: {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+},
+
+riskPill: {
+  padding: "5px 9px",
+  borderRadius: 999,
+  fontSize: 12,
+  fontWeight: 700,
+},
+
+activityTime: {
+  color: "#8ea0b8",
+  fontSize: 13,
+},
+
+activityContent: {
+  color: "#e5edf8",
+  fontSize: 14,
+},
+
+activitySub: {
+  fontSize: 12,
+  color: "#8ea0b8",
+  marginTop: 4,
+},
+
+activityBadge: {
+  background: "#132035",
+  padding: "6px 10px",
+  borderRadius: 999,
+  fontSize: 12,
+  cursor: "pointer",
+  textAlign: "center",
+},
 
   shell: {
     maxWidth: "1440px",
@@ -19,6 +251,76 @@ export const styles = {
     flexWrap: "wrap",
     marginBottom: "28px",
   },
+
+attackMapWrap: {
+  display: "grid",
+  gridTemplateColumns: "1.5fr 0.8fr",
+  gap: 18,
+  alignItems: "stretch",
+},
+
+attackMap: {
+  position: "relative",
+  minHeight: 330,
+  borderRadius: 20,
+  overflow: "hidden",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background:
+    "radial-gradient(circle at 20% 45%, rgba(56,189,248,0.10), transparent 10%), radial-gradient(circle at 50% 35%, rgba(239,68,68,0.12), transparent 12%), radial-gradient(circle at 70% 50%, rgba(245,158,11,0.10), transparent 10%), linear-gradient(135deg,#07111f,#111c2e)",
+},
+hotspot: {
+  position: "absolute",
+  transform: "translate(-50%, -50%)",
+  borderRadius: "999px",
+  background: "rgba(239,68,68,0.9)",
+  border: "2px solid rgba(255,255,255,0.8)",
+  animation: "pulse 2s infinite",
+},
+mapLabel: {
+  position: "absolute",
+  left: 18,
+  bottom: 18,
+  color: "#8ea0b8",
+  fontSize: 13,
+},
+
+mapLegend: {
+  display: "grid",
+  gap: 10,
+  alignContent: "start",
+},
+
+mapLegendRow: {
+  display: "grid",
+  gridTemplateColumns: "12px 1fr auto",
+  gap: 10,
+  alignItems: "center",
+  padding: 12,
+  borderRadius: 14,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.03)",
+  color: "#dbeafe",
+  fontSize: 13,
+},
+
+legendDot: {
+  width: 9,
+  height: 9,
+  borderRadius: 999,
+  background: "#ef4444",
+  boxShadow: "0 0 14px rgba(239,68,68,0.8)",
+},
+
+appLayout: {
+  display: "flex",
+  minHeight: "100vh",
+  background: "linear-gradient(135deg,#050814,#0b1220)",
+},
+
+pageWithSidebar: {
+  marginLeft: 260,
+  width: "calc(100% - 260px)",
+},
 
   headingRow: {
     display: "flex",

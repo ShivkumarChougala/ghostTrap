@@ -1,5 +1,5 @@
 const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
+  import.meta.env.VITE_API_BASE_URL || "http://192.168.31.190:8000/api/v1";
 
 async function fetchJson(path) {
   const res = await fetch(`${API_BASE}${path}`);
@@ -20,6 +20,7 @@ export async function getDashboardData() {
     topPasswords,
     topSourceIps,
     recentSessions,
+    ipIntelSummary,
   ] = await Promise.all([
     fetchJson("/summary"),
     fetchJson("/timeline"),
@@ -28,6 +29,7 @@ export async function getDashboardData() {
     fetchJson("/top-passwords"),
     fetchJson("/top-source-ips"),
     fetchJson("/recent-sessions"),
+    fetchJson("/ip-intel/summary").catch(() => null),
   ]);
 
   return {
@@ -38,6 +40,7 @@ export async function getDashboardData() {
     topPasswords,
     topSourceIps,
     recentSessions,
+    ipIntelSummary,
   };
 }
 

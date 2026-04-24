@@ -7,7 +7,6 @@ import {
   RefreshCw,
   Search,
   Globe,
-  AlertTriangle,
 } from "lucide-react";
 import {
   LineChart,
@@ -17,18 +16,20 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
 } from "recharts";
 
 import { getDashboardData, getSessionDetails } from "./services/api";
 import { styles } from "./styles/dashboardStyles";
 
+import Sidebar from "./components/Sidebar";
 import StatCard from "./components/StatCard";
 import Section from "./components/Section";
 import TopList from "./components/TopList";
-import SessionTable from "./components/SessionTable";
+import RecentActivity from "./components/RecentActivity";
 import SessionDetails from "./components/SessionDetails";
+import TopCommandThreats from "./components/TopCommandThreats";
+import IPIntelSummary from "./components/IPIntelSummary";
+import AttackMap from "./components/AttackMap";
 
 export default function App() {
   const [summary, setSummary] = useState(null);
@@ -38,6 +39,7 @@ export default function App() {
   const [topPasswords, setTopPasswords] = useState([]);
   const [topIps, setTopIps] = useState([]);
   const [recentSessions, setRecentSessions] = useState([]);
+  const [ipIntelSummary, setIpIntelSummary] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -59,13 +61,14 @@ export default function App() {
 
       const data = await getDashboardData();
 
-      setSummary(data.summary);
+      setSummary(data.summary || data);
       setTimeline(Array.isArray(data.timeline) ? data.timeline : []);
       setTopCommands(Array.isArray(data.topCommands) ? data.topCommands : []);
       setTopUsernames(Array.isArray(data.topUsernames) ? data.topUsernames : []);
       setTopPasswords(Array.isArray(data.topPasswords) ? data.topPasswords : []);
       setTopIps(Array.isArray(data.topSourceIps) ? data.topSourceIps : []);
       setRecentSessions(Array.isArray(data.recentSessions) ? data.recentSessions : []);
+      setIpIntelSummary(data.ipIntelSummary || null);
       setLastUpdated(new Date().toLocaleTimeString());
     } catch (err) {
       setError(err.message || "Failed to load dashboard data");
@@ -114,332 +117,345 @@ export default function App() {
     });
   }, [recentSessions, search]);
 
-  const posture = useMemo(() => {
-    const critical = selectedCommands.filter((c) =>
-      /shadow|id_rsa|authorized_keys|nc|python -c|python3 -c|bash -i|curl|wget/i.test(
-        c.command || ""
-      )
-    ).length;
+  const sumTimelineField = (field) => {
+    return timeline.reduce((sum, row) => sum + Number(row?.[field] || 0), 0);
+  };
 
-    const high = selectedCommands.filter((c) =>
-      /sudo|su|useradd|adduser|passwd/i.test(c.command || "")
-    ).length;
+  const getAddedMetric = ({ totalKey, addedKeys, timelineKey }) => {
+    const total = Number(summary?.[totalKey] || 0);
+    let added = null;
 
-    const medium = selectedCommands.filter((c) =>
-      /chmod|chown|find|cat|tail|head/i.test(c.command || "")
-    ).length;
+    for (const key of addedKeys) {
+      if (summary?.[key] !== undefined && summary?.[key] !== null) {
+        added = Number(summary[key]);
+        break;
+      }
+    }
 
-    const low = selectedCommands.filter((c) =>
-      /ls|pwd|whoami|id|uname|hostname|ps/i.test(c.command || "")
-    ).length;
+    if (added === null && timelineKey) {
+      added = sumTimelineField(timelineKey);
+    }
 
-    return { critical, high, medium, low };
-  }, [selectedCommands]);
+    if (added === null || Number.isNaN(added)) {
+      return "0 added in last 24h";
+    }
+
+    const percent = total > 0 ? ((added / total) * 100).toFixed(1) : "0.0";
+    return `+${added} in last 24h · ${percent}% of total`;
+  };
+
+  const threatBannerText = useMemo(() => {
+    const attempts = summary?.login_attempts || 0;
+
+    if (attempts > 1000) {
+      return `🔥 High Attack Activity — ${attempts} login attempts detected`;
+    }
+
+    if (attempts > 100) {
+      return `⚠ Moderate Attack Activity — ${attempts} login attempts detected`;
+    }
+
+    return `🟢 Normal Activity — ${attempts} login attempts detected`;
+  }, [summary]);
 
   if (loading) {
     return (
-      <div style={styles.page}>
-        <div style={styles.shell}>
-          <h1 style={styles.heading}>GhostTrap Command Center</h1>
-          <p style={styles.subheading}>Loading live honeypot telemetry...</p>
+      <div style={styles.appLayout}>
+        <Sidebar />
+        <div style={styles.pageWithSidebar}>
+          <div style={styles.shell}>
+            <h1 style={styles.heading}>GhostTrap Command Center</h1>
+            <p style={styles.subheading}>Loading live honeypot telemetry...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.shell}>
-        <div style={styles.header}>
-          <div>
-            <div style={styles.badgePill}>
-              <span style={styles.liveDot} />
-              Live Threat Monitoring
-            </div>
+    <div style={styles.appLayout}>
+      <Sidebar />
 
-            <div style={styles.headingRow}>
-              <div style={styles.logoBox}>
-                <Shield size={24} />
+      <div style={styles.pageWithSidebar}>
+        <div style={styles.shell}>
+          <div id="overview" style={styles.header}>
+            <div>
+              <div style={styles.badgePill}>
+                <span style={styles.liveDot} />
+                Live Threat Monitoring
               </div>
 
-              <div>
-                <h1 style={styles.heading}>GhostTrap Command Center</h1>
-                <p style={styles.subheading}>
-                  Real-time SSH honeypot monitoring, attacker behavior visibility,
-                  session intelligence, and command risk analysis in one place.
-                </p>
-              </div>
-            </div>
-          </div>
+              <div style={styles.headingRow}>
+                <div style={styles.logoBox}>
+                  <Shield size={24} />
+                </div>
 
-          <div style={styles.headerControls}>
-            <div style={styles.searchBox}>
-              <Search size={16} />
-              <input
-                style={styles.input}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by session, IP, honeypot, VM..."
-              />
-            </div>
-
-            <button style={styles.button} onClick={() => loadDashboard("refresh")}>
-              <RefreshCw size={16} style={{ marginRight: 8 }} />
-              {refreshing ? "Refreshing..." : "Refresh"}
-            </button>
-          </div>
-        </div>
-
-        {error && <div style={styles.errorBox}>{error}</div>}
-
-        <div style={styles.grid4}>
-          <StatCard
-            title="Total Sessions"
-            value={summary?.total_sessions}
-            subtitle="Captured SSH sessions"
-            icon={Activity}
-            styles={styles}
-          />
-          <StatCard
-            title="Login Attempts"
-            value={summary?.login_attempts}
-            subtitle="Credential guessing activity"
-            icon={Users}
-            styles={styles}
-          />
-          <StatCard
-            title="Commands Logged"
-            value={summary?.commands_logged}
-            subtitle="Observed attacker commands"
-            icon={Terminal}
-            styles={styles}
-          />
-          <StatCard
-            title="Enriched IPs"
-            value={summary?.enriched_ips}
-            subtitle="IPs resolved with threat intel"
-            icon={Globe}
-            styles={styles}
-          />
-        </div>
-
-        <div style={styles.grid2}>
-          <Section
-            title="Attack Activity Timeline"
-            subtitle="Sessions and attacker interactions over time"
-            right={<span style={styles.muted}>Updated: {lastUpdated || "-"}</span>}
-            styles={styles}
-          >
-            <div style={{ width: "100%", height: 320 }}>
-              <ResponsiveContainer>
-                <LineChart data={timeline}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
-                  <XAxis dataKey="time_bucket" stroke="rgba(255,255,255,0.35)" />
-                  <YAxis stroke="rgba(255,255,255,0.35)" />
-                  <Tooltip
-                    contentStyle={{
-                      background: "rgba(11,21,38,0.96)",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "14px",
-                      color: "#e5eef9",
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="sessions"
-                    stroke="#3dd9ff"
-                    strokeWidth={2.5}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="commands"
-                    stroke="#8b5cf6"
-                    strokeWidth={2.5}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </Section>
-
-          <Section
-            title="Threat Posture"
-            subtitle="Current command risk snapshot from selected session"
-            styles={styles}
-          >
-            <div style={styles.riskGrid}>
-              <div style={{ ...styles.detailCard, ...styles.kpiCritical }}>
-                <div style={styles.detailLabel}>Critical</div>
-                <div style={styles.cardValue}>{posture.critical}</div>
-              </div>
-
-              <div style={{ ...styles.detailCard, ...styles.kpiHigh }}>
-                <div style={styles.detailLabel}>High</div>
-                <div style={styles.cardValue}>{posture.high}</div>
-              </div>
-
-              <div style={{ ...styles.detailCard, ...styles.kpiMedium }}>
-                <div style={styles.detailLabel}>Medium</div>
-                <div style={styles.cardValue}>{posture.medium}</div>
-              </div>
-
-              <div style={{ ...styles.detailCard, ...styles.kpiLow }}>
-                <div style={styles.detailLabel}>Low</div>
-                <div style={styles.cardValue}>{posture.low}</div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 16 }}>
-              <div
-                style={{
-                  ...styles.detailCard,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                }}
-              >
-                <AlertTriangle size={18} color="#f59e0b" />
-                <div style={styles.detailValue}>
-                  {selectedSessionId
-                    ? `Selected session: ${selectedSessionId}`
-                    : "Select a session below to inspect its command risk profile."}
+                <div>
+                  <h1 style={styles.heading}>GhostTrap Command Center</h1>
+                  <p style={styles.subheading}>
+                    Real-time SSH honeypot monitoring, attacker behavior visibility,
+                    session intelligence, and command risk analysis in one place.
+                  </p>
                 </div>
               </div>
             </div>
-          </Section>
-        </div>
 
-        <div style={styles.grid2Equal}>
-          <Section
-            title="Top Commands Chart"
-            subtitle="Most frequently observed attacker commands"
-            styles={styles}
-          >
-            <div style={{ width: "100%", height: 280 }}>
-              <ResponsiveContainer>
-                <BarChart data={topCommands.slice(0, 6)}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="label"
-                    stroke="rgba(255,255,255,0.35)"
-                    tickFormatter={(value) =>
-                      String(value).length > 10 ? `${String(value).slice(0, 10)}…` : value
-                    }
-                  />
-                  <YAxis stroke="rgba(255,255,255,0.35)" />
-                  <Tooltip
-                    contentStyle={{
-                      background: "rgba(11,21,38,0.96)",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "14px",
-                      color: "#e5eef9",
-                    }}
-                  />
-                  <Bar dataKey="count" fill="#4f8cff" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+            <div style={styles.headerControls}>
+              <div style={styles.searchBox}>
+                <Search size={16} />
+                <input
+                  style={styles.input}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by session, IP, honeypot, VM..."
+                />
+              </div>
+
+              <button style={styles.button} onClick={() => loadDashboard("refresh")}>
+                <RefreshCw size={16} style={{ marginRight: 8 }} />
+                {refreshing ? "Refreshing..." : "Refresh"}
+              </button>
             </div>
-          </Section>
+          </div>
 
-          <Section
-            title="Top Commands List"
-            subtitle="Top command values with counts"
-            styles={styles}
-          >
-            <TopList
-              items={topCommands}
-              labelKey="label"
-              valueKey="count"
-              emptyText="No command data."
+          {error && <div style={styles.errorBox}>{error}</div>}
+
+          <div style={styles.threatBanner}>{threatBannerText}</div>
+
+          <div style={styles.grid4}>
+            <StatCard
+              title="Total Sessions"
+              value={summary?.total_sessions}
+              subtitle={getAddedMetric({
+                totalKey: "total_sessions",
+                addedKeys: ["sessions_24h", "total_sessions_24h", "new_sessions_24h"],
+                timelineKey: "sessions",
+              })}
+              icon={Activity}
               styles={styles}
-              limit={8}
             />
-          </Section>
+
+            <StatCard
+              title="Login Attempts"
+              value={summary?.login_attempts}
+              subtitle={getAddedMetric({
+                totalKey: "login_attempts",
+                addedKeys: ["login_attempts_24h", "attempts_24h", "new_login_attempts_24h"],
+                timelineKey: "login_attempts",
+              })}
+              icon={Users}
+              styles={styles}
+            />
+
+            <StatCard
+              title="Commands Logged"
+              value={summary?.commands_logged}
+              subtitle={getAddedMetric({
+                totalKey: "commands_logged",
+                addedKeys: ["commands_24h", "commands_logged_24h", "new_commands_24h"],
+                timelineKey: "commands",
+              })}
+              icon={Terminal}
+              styles={styles}
+            />
+
+            <StatCard
+              title="Enriched IPs"
+              value={summary?.enriched_ips}
+              subtitle={getAddedMetric({
+                totalKey: "enriched_ips",
+                addedKeys: ["enriched_ips_24h", "new_enriched_ips_24h", "ip_enrichment_24h"],
+                timelineKey: "enriched_ips",
+              })}
+              icon={Globe}
+              styles={styles}
+            />
+          </div>
+
+          <div id="attack-map">
+            <Section
+              title="Global Attack Map"
+              subtitle="Observed attacker locations based on enriched source IPs"
+              styles={styles}
+            >
+              <AttackMap intel={ipIntelSummary} styles={styles} />
+            </Section>
+          </div>
+
+          <div id="ip-intel">
+            <Section
+              title="IP Intelligence Summary"
+              subtitle="Geo, ASN, and enrichment coverage for observed attacker IPs"
+              styles={styles}
+            >
+              <IPIntelSummary intel={ipIntelSummary} styles={styles} />
+            </Section>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1.7fr) minmax(360px, 0.8fr)",
+              gap: "22px",
+              alignItems: "stretch",
+            }}
+          >
+            <Section
+              title="Attack Activity Timeline"
+              subtitle="Sessions and attacker interactions over time"
+              right={<span style={styles.muted}>Updated: {lastUpdated || "-"}</span>}
+              styles={styles}
+            >
+              <div style={{ width: "100%", height: 460 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={timeline}
+                    margin={{ top: 24, right: 32, left: 8, bottom: 18 }}
+                  >
+                    <CartesianGrid
+                      stroke="rgba(255,255,255,0.08)"
+                      strokeDasharray="3 3"
+                    />
+                    <XAxis
+                      dataKey="time_bucket"
+                      stroke="rgba(255,255,255,0.35)"
+                      tick={{ fontSize: 12 }}
+                      minTickGap={28}
+                    />
+                    <YAxis
+                      stroke="rgba(255,255,255,0.35)"
+                      tick={{ fontSize: 12 }}
+                      width={42}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "rgba(11,21,38,0.96)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: "14px",
+                        color: "#e5eef9",
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="sessions"
+                      stroke="#3dd9ff"
+                      strokeWidth={3}
+                      dot={false}
+                      activeDot={{ r: 5 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="commands"
+                      stroke="#8b5cf6"
+                      strokeWidth={2.4}
+                      dot={false}
+                      activeDot={{ r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </Section>
+
+            <Section
+              title="Command Risk Intelligence"
+              subtitle="Commands classified by attacker behavior"
+              styles={styles}
+            >
+              <div
+                style={{
+                  maxHeight: "460px",
+                  overflowY: "auto",
+                  paddingRight: "6px",
+                }}
+              >
+                <TopCommandThreats commands={topCommands} styles={styles} />
+              </div>
+            </Section>
+          </div>
+
+          <div id="credentials" style={styles.grid3}>
+            <Section title="Top Usernames" subtitle="Most observed usernames" styles={styles}>
+              <TopList
+                items={topUsernames}
+                labelKey="label"
+                valueKey="count"
+                emptyText="No username data."
+                styles={styles}
+                limit={8}
+              />
+            </Section>
+
+            <Section title="Top Passwords" subtitle="Most observed passwords" styles={styles}>
+              <TopList
+                items={topPasswords}
+                labelKey="label"
+                valueKey="count"
+                emptyText="No password data."
+                styles={styles}
+                limit={8}
+              />
+            </Section>
+
+            <div id="source-ips">
+              <Section
+                title="Top Source IPs"
+                subtitle="Most active attacker source IPs"
+                styles={styles}
+              >
+                <TopList
+                  items={topIps}
+                  labelKey="label"
+                  valueKey="count"
+                  emptyText="No IP data."
+                  styles={styles}
+                  limit={8}
+                />
+              </Section>
+            </div>
+          </div>
+
+          <div id="sessions">
+            <Section
+              title="Recent Sessions"
+              subtitle="Latest attacker sessions with quick telemetry view"
+              right={<span style={styles.muted}>Live window: {lastUpdated || "-"}</span>}
+              styles={styles}
+            >
+              <div
+                style={{
+                  maxHeight: "520px",
+                  overflowY: "auto",
+                  overflowX: "auto",
+                  paddingRight: "6px",
+                }}
+              >
+                <RecentActivity
+                  sessions={filteredSessions}
+                  onSelectSession={loadSelectedSession}
+                  styles={styles}
+                />
+              </div>
+            </Section>
+          </div>
+
+          {selectedSessionId && (
+            <Section
+              title="Session Intelligence"
+              subtitle="Detailed session metadata, risk summary, and full command history"
+              right={<span style={styles.muted}>Selected: {selectedSessionId}</span>}
+              styles={styles}
+            >
+              <SessionDetails
+                sessionId={selectedSessionId}
+                session={selectedSession}
+                commands={selectedCommands}
+                loading={sessionLoading}
+                error={sessionError}
+                styles={styles}
+              />
+            </Section>
+          )}
         </div>
-
-        <div style={styles.grid3}>
-          <Section
-            title="Top Usernames"
-            subtitle="Most observed usernames"
-            styles={styles}
-          >
-            <TopList
-              items={topUsernames}
-              labelKey="label"
-              valueKey="count"
-              emptyText="No username data."
-              styles={styles}
-              limit={8}
-            />
-          </Section>
-
-          <Section
-            title="Top Passwords"
-            subtitle="Most observed passwords"
-            styles={styles}
-          >
-            <TopList
-              items={topPasswords}
-              labelKey="label"
-              valueKey="count"
-              emptyText="No password data."
-              styles={styles}
-              limit={8}
-            />
-          </Section>
-
-          <Section
-            title="Top Source IPs"
-            subtitle="Most active attacker source IPs"
-            styles={styles}
-          >
-            <TopList
-              items={topIps}
-              labelKey="label"
-              valueKey="count"
-              emptyText="No IP data."
-              styles={styles}
-              limit={8}
-            />
-          </Section>
-        </div>
-
-        <Section
-          title="Recent Sessions"
-          subtitle="Latest attacker sessions with quick telemetry view"
-          right={<span style={styles.muted}>Live window: {lastUpdated || "-"}</span>}
-          styles={styles}
-        >
-          <SessionTable
-            sessions={filteredSessions}
-            selectedSessionId={selectedSessionId}
-            onSelectSession={loadSelectedSession}
-            styles={styles}
-          />
-        </Section>
-
-        <Section
-          title="Session Intelligence"
-          subtitle="Detailed session metadata, risk summary, and full command history"
-          right={
-            selectedSessionId ? (
-              <span style={styles.muted}>Selected: {selectedSessionId}</span>
-            ) : (
-              <span style={styles.muted}>No session selected</span>
-            )
-          }
-          styles={styles}
-        >
-          <SessionDetails
-            sessionId={selectedSessionId}
-            session={selectedSession}
-            commands={selectedCommands}
-            loading={sessionLoading}
-            error={sessionError}
-            styles={styles}
-          />
-        </Section>
       </div>
     </div>
   );
