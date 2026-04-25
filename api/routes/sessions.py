@@ -1,14 +1,46 @@
+from datetime import timezone as dt_timezone
+from zoneinfo import ZoneInfo
+
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
+
 from database.db import get_db_connection
 
 router = APIRouter(tags=["Sessions"])
 
 
+def get_attacker_time(start_time, attacker_timezone):
+    if not start_time or not attacker_timezone:
+        return {
+            "attacker_local_time": None,
+            "attacker_hour": None,
+            "attacker_day": None,
+        }
+
+    try:
+        if start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=dt_timezone.utc)
+
+        local_dt = start_time.astimezone(ZoneInfo(attacker_timezone))
+
+        return {
+            "attacker_local_time": local_dt.isoformat(),
+            "attacker_hour": local_dt.hour,
+            "attacker_day": local_dt.strftime("%A"),
+        }
+
+    except Exception:
+        return {
+            "attacker_local_time": None,
+            "attacker_hour": None,
+            "attacker_day": None,
+        }
+
+
 @router.get(
     "/sessions",
     summary="Recent sessions",
-    description="Internal-only endpoint returning recent honeypot sessions for dashboard and admin use."
+    description="Internal-only endpoint returning recent honeypot sessions for dashboard and admin use.",
 )
 def get_sessions(limit: int = Query(20, ge=1, le=100, description="Maximum number of results")):
     conn = get_db_connection()
@@ -18,28 +50,45 @@ def get_sessions(limit: int = Query(20, ge=1, le=100, description="Maximum numbe
         cur.execute(
             """
             SELECT
-                session_id,
-                HOST(src_ip) AS source_ip,
-                honeypot,
-                vm,
-                total_commands,
-                ai_calls,
-                start_time,
-                end_time
-            FROM sessions
-            ORDER BY start_time DESC
+                s.session_id,
+                HOST(s.src_ip) AS source_ip,
+                i.country,
+                i.country_code,
+                i.city,
+                i.asn,
+                i.isp,
+                i.org,
+                i.timezone,
+                i.latitude,
+                i.longitude,
+                s.honeypot,
+                s.vm,
+                s.total_commands,
+                s.ai_calls,
+                s.start_time,
+                s.end_time
+            FROM sessions s
+            LEFT JOIN ip_intel i
+              ON HOST(s.src_ip) = HOST(i.ip)
+            ORDER BY s.start_time DESC
             LIMIT %s
             """,
-            (limit,)
+            (limit,),
         )
 
         rows = cur.fetchall()
+        data = []
+
+        for row in rows:
+            item = dict(row)
+            item.update(get_attacker_time(item.get("start_time"), item.get("timezone")))
+            data.append(item)
 
         return {
-            "data": rows,
+            "data": data,
             "meta": {
-                "limit": limit
-            }
+                "limit": limit,
+            },
         }
     finally:
         cur.close()
@@ -49,7 +98,7 @@ def get_sessions(limit: int = Query(20, ge=1, le=100, description="Maximum numbe
 @router.get(
     "/sessions/{session_id}",
     summary="Session detail",
-    description="Internal-only endpoint returning detailed metadata for a specific session."
+    description="Internal-only endpoint returning detailed metadata for a specific session.",
 )
 def get_session_detail(session_id: str):
     conn = get_db_connection()
@@ -59,20 +108,31 @@ def get_session_detail(session_id: str):
         cur.execute(
             """
             SELECT
-                session_id,
-                HOST(src_ip) AS source_ip,
-                fake_user,
-                honeypot,
-                vm,
-                total_commands,
-                ai_calls,
-                start_time,
-                end_time,
-                duration
-            FROM sessions
-            WHERE session_id = %s
+                s.session_id,
+                HOST(s.src_ip) AS source_ip,
+                s.fake_user,
+                i.country,
+                i.country_code,
+                i.city,
+                i.asn,
+                i.isp,
+                i.org,
+                i.timezone,
+                i.latitude,
+                i.longitude,
+                s.honeypot,
+                s.vm,
+                s.total_commands,
+                s.ai_calls,
+                s.start_time,
+                s.end_time,
+                s.duration
+            FROM sessions s
+            LEFT JOIN ip_intel i
+              ON HOST(s.src_ip) = HOST(i.ip)
+            WHERE s.session_id = %s
             """,
-            (session_id,)
+            (session_id,),
         )
 
         row = cur.fetchone()
@@ -83,13 +143,16 @@ def get_session_detail(session_id: str):
                 content={
                     "error": {
                         "code": "not_found",
-                        "message": f"Session {session_id} not found"
+                        "message": f"Session {session_id} not found",
                     }
-                }
+                },
             )
 
+        item = dict(row)
+        item.update(get_attacker_time(item.get("start_time"), item.get("timezone")))
+
         return {
-            "data": row
+            "data": item,
         }
     finally:
         cur.close()
@@ -99,11 +162,11 @@ def get_session_detail(session_id: str):
 @router.get(
     "/sessions/{session_id}/commands",
     summary="Session commands",
-    description="Internal-only endpoint returning recorded commands for a specific session."
+    description="Internal-only endpoint returning recorded commands for a specific session.",
 )
 def get_session_commands(
     session_id: str,
-    limit: int = Query(100, ge=1, le=500, description="Maximum number of results")
+    limit: int = Query(100, ge=1, le=500, description="Maximum number of results"),
 ):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -121,7 +184,7 @@ def get_session_commands(
             ORDER BY timestamp ASC
             LIMIT %s
             """,
-            (session_id, limit)
+            (session_id, limit),
         )
 
         rows = cur.fetchall()
@@ -130,8 +193,8 @@ def get_session_commands(
             "data": rows,
             "meta": {
                 "session_id": session_id,
-                "limit": limit
-            }
+                "limit": limit,
+            },
         }
     finally:
         cur.close()

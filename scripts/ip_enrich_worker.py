@@ -6,7 +6,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, PROJECT_ROOT)
 
 from database.db import get_db_connection
-from database.ip_enrich import enrich_ip
+from database.ip_enrich import enrich_ip, is_private_ip
 
 
 def get_next_ip(conn):
@@ -17,6 +17,10 @@ def get_next_ip(conn):
         LEFT JOIN ip_intel i
           ON host(s.src_ip) = host(i.ip)
         WHERE i.ip IS NULL
+          AND s.src_ip NOT << inet '10.0.0.0/8'
+          AND s.src_ip NOT << inet '172.16.0.0/12'
+          AND s.src_ip NOT << inet '192.168.0.0/16'
+          AND s.src_ip NOT << inet '127.0.0.0/8'
         ORDER BY ip
         LIMIT 1;
     """)
@@ -39,11 +43,16 @@ def main():
             ip = get_next_ip(conn)
 
             if not ip:
-                print("[+] No pending IPs. Sleeping...")
+                print("[+] No pending public IPs. Sleeping...")
                 time.sleep(10)
                 continue
 
-            print(f"[+] Enriching {ip}")
+            if is_private_ip(ip):
+                print(f"[~] Skipping private/local IP: {ip}")
+                time.sleep(2)
+                continue
+
+            print(f"[+] Enriching public IP: {ip}")
             enrich_ip(ip)
 
             time.sleep(1.5)
