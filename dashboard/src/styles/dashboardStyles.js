@@ -823,4 +823,118 @@ pageWithSidebar: {
     background: "rgba(34,197,94,0.08)",
     border: "1px solid rgba(34,197,94,0.14)",
   },
+
+  attackTable: {
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: 18,
+    overflow: "hidden",
+    background: "rgba(2,6,23,0.35)",
+    width: "100%",
+  },
+
+  attackTableHeader: {
+    display: "grid",
+    gridTemplateColumns: "0.8fr 1.25fr 1.15fr 1.25fr 0.75fr 1fr",
+    gap: 18,
+    padding: "16px 20px",
+    background: "rgba(15,23,42,0.72)",
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
+    color: "#8ea0b8",
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    whiteSpace: "nowrap",
+  },
+
+  attackTableRow: {
+    display: "grid",
+    gridTemplateColumns: "0.8fr 1.25fr 1.15fr 1.25fr 0.75fr 1fr",
+    gap: 18,
+    alignItems: "center",
+    padding: "22px 20px",
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
+  },
+
+  attackMain: {
+    color: "#e5edf8",
+    fontSize: 17,
+    fontWeight: 800,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+
+  attackSensor: {
+    color: "#38bdf8",
+    fontSize: 17,
+    fontWeight: 900,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+
+  attackSub: {
+    color: "#71839c",
+    fontSize: 13,
+    marginTop: 8,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+
+  attackFlow: {
+    color: "#e5edf8",
+    fontSize: 18,
+    fontWeight: 900,
+    whiteSpace: "nowrap",
+  },
+
+  attackArrow: {
+    color: "#f97316",
+    margin: "0 6px",
+  },
+
+  attackActions: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 10,
+    whiteSpace: "nowrap",
+  },
+
+  attackStatus: {
+    padding: "7px 11px",
+    borderRadius: 10,
+    fontSize: 12,
+    fontWeight: 900,
+  },
+
+  attackStatusActive: {
+    background: "rgba(34,197,94,0.12)",
+    color: "#22c55e",
+  },
+
+  attackStatusDone: {
+    background: "rgba(148,163,184,0.10)",
+    color: "#94a3b8",
+  },
+
+  attackViewButton: {
+    background: "#132035",
+    color: "#dbeafe",
+    border: "1px solid rgba(255,255,255,0.10)",
+    padding: "8px 16px",
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+
+  attackViewButtonActive: {
+    background: "rgba(56,189,248,0.16)",
+    border: "1px solid rgba(56,189,248,0.35)",
+    color: "#67e8f9",
+  },
+
 };
