@@ -33,15 +33,51 @@ activityItem: {
   alignItems: "center",
 },
 threatBanner: {
-  background: "linear-gradient(90deg, rgba(239,68,68,0.16), rgba(245,158,11,0.14))",
-  border: "1px solid rgba(239,68,68,0.25)",
-  padding: "14px 18px",
-  borderRadius: "16px",
-  fontWeight: 700,
-  marginBottom: "18px",
-  color: "#fecaca",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: "14px",
+  padding: "10px 14px",
+  borderRadius: "14px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.045)",
+  marginBottom: "14px",
 },
 
+threatBannerLeft: {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  minWidth: 0,
+},
+
+threatSeverityDot: {
+  width: "9px",
+  height: "9px",
+  borderRadius: "999px",
+  background: "#f59e0b",
+  boxShadow: "0 0 12px rgba(245,158,11,0.8)",
+  flexShrink: 0,
+},
+
+threatBannerMetric: {
+  fontWeight: 800,
+  fontSize: "14px",
+  color: "#e5edf8",
+  whiteSpace: "nowrap",
+},
+
+threatBannerSub: {
+  fontSize: "13px",
+  color: "#8ea0b8",
+  whiteSpace: "nowrap",
+},
+
+threatBannerRight: {
+  fontSize: "12px",
+  color: "#8ea0b8",
+  whiteSpace: "nowrap",
+},
 aiBox: {
   background: "rgba(61,217,255,0.08)",
   border: "1px solid rgba(61,217,255,0.2)",

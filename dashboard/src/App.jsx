@@ -261,19 +261,26 @@ export default function App() {
 
           {error && <div style={styles.errorBox}>{error}</div>}
 
-          <div style={styles.threatBanner}>
-            <div>{threatBannerText}</div>
-            <div
-              style={{
-                marginTop: "6px",
-                fontSize: "12px",
-                color: "rgba(226,232,240,0.72)",
-                letterSpacing: "0.02em",
-              }}
-            >
-              Last updated: {lastUpdated || "-"} · Auto-refresh every 60s
-            </div>
-          </div>
+          
+     <div style={styles.threatBanner}>
+  	 <div style={styles.threatBannerLeft}>
+    	 <span style={styles.threatSeverityDot} />
+
+    	<div style={styles.threatBannerMetric}>
+      	Live Threat Signal
+    	</div>
+
+    	<div style={styles.threatBannerSub}>
+     	 {formatNumber(liveOverview?.login_attempts || 0)} login attempts in the last 1 hour
+    	</div>
+    </div>
+
+   <div style={styles.threatBannerRight}>
+   	 Updated {lastUpdated || "-"} · Refresh 60s
+  </div>
+</div>
+ 
+
 
           <div style={styles.grid4}>
             <StatCard
