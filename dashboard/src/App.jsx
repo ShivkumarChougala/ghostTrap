@@ -31,8 +31,13 @@ import TopCommandThreats from "./components/TopCommandThreats";
 import IPIntelSummary from "./components/IPIntelSummary";
 import AttackMap from "./components/AttackMap";
 
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL || "http://192.168.31.190:8000/api/v1";
+
 export default function App() {
   const [summary, setSummary] = useState(null);
+  const [liveOverview, setLiveOverview] = useState(null);
+
   const [timeline, setTimeline] = useState([]);
   const [topCommands, setTopCommands] = useState([]);
   const [topUsernames, setTopUsernames] = useState([]);
@@ -53,6 +58,15 @@ export default function App() {
   const [sessionLoading, setSessionLoading] = useState(false);
   const [sessionError, setSessionError] = useState("");
 
+  const formatNumber = (value) => Number(value || 0).toLocaleString();
+
+  const loadLiveOverview = async () => {
+    const res = await fetch(`${API_BASE}/overview?hours=1`);
+    if (!res.ok) throw new Error(`Live overview API error ${res.status}`);
+    const json = await res.json();
+    setLiveOverview(json.data || json);
+  };
+
   const loadDashboard = async (mode = "initial") => {
     try {
       setError("");
@@ -60,6 +74,7 @@ export default function App() {
       if (mode === "refresh") setRefreshing(true);
 
       const data = await getDashboardData();
+      await loadLiveOverview();
 
       setSummary(data.summary || data);
       setTimeline(Array.isArray(data.timeline) ? data.timeline : []);
@@ -82,6 +97,14 @@ export default function App() {
     try {
       setSessionLoading(true);
       setSessionError("");
+
+      if (selectedSessionId === sessionId) {
+        setSelectedSessionId(null);
+        setSelectedSession(null);
+        setSelectedCommands([]);
+        return;
+      }
+
       setSelectedSessionId(sessionId);
 
       const data = await getSessionDetails(sessionId);
@@ -99,7 +122,11 @@ export default function App() {
 
   useEffect(() => {
     loadDashboard("initial");
-    const timer = setInterval(() => loadDashboard("refresh"), 15000);
+
+    const timer = setInterval(() => {
+      loadDashboard("refresh");
+    }, 60000);
+
     return () => clearInterval(timer);
   }, []);
 
@@ -112,7 +139,9 @@ export default function App() {
         String(session.session_id || "").toLowerCase().includes(q) ||
         String(session.source_ip || "").toLowerCase().includes(q) ||
         String(session.honeypot || "").toLowerCase().includes(q) ||
-        String(session.vm || "").toLowerCase().includes(q)
+        String(session.vm || "").toLowerCase().includes(q) ||
+        String(session.country || "").toLowerCase().includes(q) ||
+        String(session.sensor_id || "").toLowerCase().includes(q)
       );
     });
   }, [recentSessions, search]);
@@ -141,22 +170,34 @@ export default function App() {
     }
 
     const percent = total > 0 ? ((added / total) * 100).toFixed(1) : "0.0";
-    return `+${added} in last 24h · ${percent}% of total`;
+    return `+${formatNumber(added)} in last 24h · ${percent}% of total`;
   };
 
   const threatBannerText = useMemo(() => {
-    const attempts = summary?.login_attempts || 0;
+    const attempts = Number(liveOverview?.login_attempts || 0);
 
-    if (attempts > 1000) {
-      return ` High Attack Activity — ${attempts} login attempts detected`;
+    if (attempts >= 1000) {
+      return `Critical Attack Activity — ${formatNumber(
+        attempts
+      )} login attempts observed in the last 1 hour`;
     }
 
-    if (attempts > 100) {
-      return ` Moderate Attack Activity — ${attempts} login attempts detected`;
+    if (attempts >= 100) {
+      return `High Attack Activity — ${formatNumber(
+        attempts
+      )} login attempts observed in the last 1 hour`;
     }
 
-    return ` Normal Activity — ${attempts} login attempts detected`;
-  }, [summary]);
+    if (attempts >= 25) {
+      return `Moderate Attack Activity — ${formatNumber(
+        attempts
+      )} login attempts observed in the last 1 hour`;
+    }
+
+    return `Normal Activity — ${formatNumber(
+      attempts
+    )} login attempts observed in the last 1 hour`;
+  }, [liveOverview]);
 
   if (loading) {
     return (
@@ -182,7 +223,7 @@ export default function App() {
             <div>
               <div style={styles.badgePill}>
                 <span style={styles.liveDot} />
-                Live Threat Monitoring
+                Live Threat Monitoring · 1h Signal
               </div>
 
               <div style={styles.headingRow}>
@@ -207,7 +248,7 @@ export default function App() {
                   style={styles.input}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by session, IP, honeypot, VM..."
+                  placeholder="Search session, IP, country, sensor..."
                 />
               </div>
 
@@ -220,7 +261,19 @@ export default function App() {
 
           {error && <div style={styles.errorBox}>{error}</div>}
 
-          <div style={styles.threatBanner}>{threatBannerText}</div>
+          <div style={styles.threatBanner}>
+            <div>{threatBannerText}</div>
+            <div
+              style={{
+                marginTop: "6px",
+                fontSize: "12px",
+                color: "rgba(226,232,240,0.72)",
+                letterSpacing: "0.02em",
+              }}
+            >
+              Last updated: {lastUpdated || "-"} · Auto-refresh every 60s
+            </div>
+          </div>
 
           <div style={styles.grid4}>
             <StatCard
@@ -236,7 +289,7 @@ export default function App() {
             />
 
             <StatCard
-              title="Login Attempts"
+              title="Login Attempts (24h)"
               value={summary?.login_attempts}
               subtitle={getAddedMetric({
                 totalKey: "login_attempts",
@@ -248,7 +301,7 @@ export default function App() {
             />
 
             <StatCard
-              title="Commands Logged"
+              title="Commands Logged (24h)"
               value={summary?.commands_logged}
               subtitle={getAddedMetric({
                 totalKey: "commands_logged",
@@ -418,7 +471,7 @@ export default function App() {
             <Section
               title="Recent Sessions"
               subtitle="Latest attacker sessions with quick telemetry view"
-              right={<span style={styles.muted}>Live window: {lastUpdated || "-"}</span>}
+              right={<span style={styles.muted}>Updated: {lastUpdated || "-"}</span>}
               styles={styles}
             >
               <div
@@ -432,6 +485,7 @@ export default function App() {
                 <RecentActivity
                   sessions={filteredSessions}
                   onSelectSession={loadSelectedSession}
+                  selectedSessionId={selectedSessionId}
                   styles={styles}
                 />
               </div>
