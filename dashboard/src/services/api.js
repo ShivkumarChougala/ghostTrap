@@ -1,47 +1,92 @@
 const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || "http://192.168.31.190:8000/api/v1";
+  import.meta.env.VITE_API_BASE_URL || "https://api.thechougala.in/api/v1";
+
+const ANALYTICS_HOURS = 8760;
 
 async function fetchJson(path) {
-  const res = await fetch(`${API_BASE}${path}`);
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { Accept: "application/json" },
+  });
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch ${path}: ${res.status}`);
+    throw new Error(`API error ${res.status}`);
   }
 
   return res.json();
+}
+
+function unwrap(res, fallback = []) {
+  if (res && Object.prototype.hasOwnProperty.call(res, "data")) {
+    return res.data;
+  }
+
+  return res ?? fallback;
+}
+
+function normalize(items = [], key) {
+  return items.map((i) => ({
+    ...i,
+    label: i.label || i[key] || "unknown",
+    count: Number(i.count || 0),
+  }));
 }
 
 export async function getDashboardData() {
   const [
     summary,
     timeline,
-    topCommands,
-    topUsernames,
-    topPasswords,
-    topSourceIps,
-    recentSessions,
+    commands,
+    usernames,
+    passwords,
+    ips,
+    sessions,
+    threatOverview,
+    malwareAttempts,
+    sensitiveAccess,
     ipIntelSummary,
   ] = await Promise.all([
-    fetchJson("/summary"),
-    fetchJson("/timeline"),
-    fetchJson("/top-commands"),
-    fetchJson("/top-usernames"),
-    fetchJson("/top-passwords"),
-    fetchJson("/top-source-ips"),
-    fetchJson("/recent-sessions"),
-    fetchJson("/ip-intel/summary").catch(() => null),
+    fetchJson(`/overview?hours=${ANALYTICS_HOURS}`),
+    fetchJson(`/overview/timeline?hours=${ANALYTICS_HOURS}&interval=day`),
+    fetchJson(`/analytics/commands?limit=10&hours=${ANALYTICS_HOURS}`),
+    fetchJson(`/analytics/usernames?limit=10&hours=${ANALYTICS_HOURS}`),
+    fetchJson(`/analytics/passwords?limit=10&hours=${ANALYTICS_HOURS}`),
+    fetchJson(`/analytics/source-ips?limit=10&hours=${ANALYTICS_HOURS}`),
+    fetchJson(`/sessions?page=1&page_size=100`),
+    fetchJson("/threats/overview"),
+    fetchJson("/threats/malware-attempts"),
+    fetchJson("/threats/sensitive-access"),
+    fetchJson("/ip-intel/summary"),
   ]);
 
   return {
-    summary,
-    timeline,
-    topCommands,
-    topUsernames,
-    topPasswords,
-    topSourceIps,
-    recentSessions,
-    ipIntelSummary,
+    summary: unwrap(summary, {}),
+
+    timeline: unwrap(timeline, []).map((t) => ({
+      ...t,
+      time_bucket: t.time_bucket || t.timestamp || t.time,
+      time: t.time || t.timestamp || t.time_bucket,
+      timestamp: t.timestamp || t.time_bucket || t.time,
+      sessions: Number(t.sessions || 0),
+      commands: Number(t.commands || 0),
+    })),
+
+    topCommands: normalize(unwrap(commands, []), "command"),
+    topUsernames: normalize(unwrap(usernames, []), "username"),
+    topPasswords: normalize(unwrap(passwords, []), "password"),
+    topSourceIps: normalize(unwrap(ips, []), "source_ip"),
+
+    recentSessions: unwrap(sessions, []),
+    recentSessionsMeta: sessions?.meta || {},
+
+    threatOverview: unwrap(threatOverview, {}),
+    malwareAttempts: unwrap(malwareAttempts, []),
+    sensitiveAccess: unwrap(sensitiveAccess, []),
+    ipIntelSummary: unwrap(ipIntelSummary, {}),
   };
+}
+
+export async function getSessions(page = 1, pageSize = 100) {
+  return fetchJson(`/sessions?page=${page}&page_size=${pageSize}`);
 }
 
 export async function getSessionDetails(sessionId) {
@@ -51,7 +96,7 @@ export async function getSessionDetails(sessionId) {
   ]);
 
   return {
-    session,
-    commands,
+    session: unwrap(session, {}),
+    commands: unwrap(commands, []),
   };
 }

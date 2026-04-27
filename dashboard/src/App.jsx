@@ -148,14 +148,14 @@ export default function App() {
     const attempts = summary?.login_attempts || 0;
 
     if (attempts > 1000) {
-      return `🔥 High Attack Activity — ${attempts} login attempts detected`;
+      return ` High Attack Activity — ${attempts} login attempts detected`;
     }
 
     if (attempts > 100) {
-      return `⚠ Moderate Attack Activity — ${attempts} login attempts detected`;
+      return ` Moderate Attack Activity — ${attempts} login attempts detected`;
     }
 
-    return `🟢 Normal Activity — ${attempts} login attempts detected`;
+    return ` Normal Activity — ${attempts} login attempts detected`;
   }, [summary]);
 
   if (loading) {
@@ -164,7 +164,7 @@ export default function App() {
         <Sidebar />
         <div style={styles.pageWithSidebar}>
           <div style={styles.shell}>
-            <h1 style={styles.heading}>GhostTrap Command Center</h1>
+            <h1 style={styles.heading}>GhostTrap</h1>
             <p style={styles.subheading}>Loading live honeypot telemetry...</p>
           </div>
         </div>
@@ -191,7 +191,7 @@ export default function App() {
                 </div>
 
                 <div>
-                  <h1 style={styles.heading}>GhostTrap Command Center</h1>
+                  <h1 style={styles.heading}>GhostTrap</h1>
                   <p style={styles.subheading}>
                     Real-time SSH honeypot monitoring, attacker behavior visibility,
                     session intelligence, and command risk analysis in one place.
