@@ -275,7 +275,7 @@ activityBadge: {
 },
 
   shell: {
-    maxWidth: "1440px",
+    maxWidth: "1680px",
     margin: "0 auto",
   },
 
@@ -290,7 +290,7 @@ activityBadge: {
 
 attackMapWrap: {
   display: "grid",
-  gridTemplateColumns: "1.5fr 0.8fr",
+  gridTemplateColumns: "1.7fr 0.8fr",
   gap: 18,
   alignItems: "stretch",
 },
@@ -348,14 +348,12 @@ legendDot: {
 },
 
 appLayout: {
-  display: "flex",
   minHeight: "100vh",
   background: "linear-gradient(135deg,#050814,#0b1220)",
 },
 
 pageWithSidebar: {
-  marginLeft: 260,
-  width: "calc(100% - 260px)",
+  width: "100%",
 },
 
   headingRow: {
