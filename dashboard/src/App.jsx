@@ -16,12 +16,13 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell,
 } from "recharts";
-
 import { getDashboardData, getSessionDetails } from "./services/api";
 import { styles } from "./styles/dashboardStyles";
 
-import Sidebar from "./components/Sidebar";
 import StatCard from "./components/StatCard";
 import Section from "./components/Section";
 import TopList from "./components/TopList";
@@ -202,7 +203,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={styles.appLayout}>
-        <Sidebar />
+       
         <div style={styles.pageWithSidebar}>
           <div style={styles.shell}>
             <h1 style={styles.heading}>GhostTrap</h1>
@@ -215,7 +216,7 @@ export default function App() {
 
   return (
     <div style={styles.appLayout}>
-      <Sidebar />
+      
 
       <div style={styles.pageWithSidebar}>
         <div style={styles.shell}>
@@ -223,7 +224,7 @@ export default function App() {
             <div>
               <div style={styles.badgePill}>
                 <span style={styles.liveDot} />
-                Live Threat Monitoring · 1h Signal
+                Live Threat Monitoring · 
               </div>
 
               <div style={styles.headingRow}>
@@ -296,7 +297,7 @@ export default function App() {
             />
 
             <StatCard
-              title="Login Attempts (24h)"
+              title="Login Attempts"
               value={summary?.login_attempts}
               subtitle={getAddedMetric({
                 totalKey: "login_attempts",
@@ -308,7 +309,7 @@ export default function App() {
             />
 
             <StatCard
-              title="Commands Logged (24h)"
+              title="Commands Logged "
               value={summary?.commands_logged}
               subtitle={getAddedMetric({
                 totalKey: "commands_logged",
@@ -368,50 +369,100 @@ export default function App() {
             >
               <div style={{ width: "100%", height: 460 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={timeline}
-                    margin={{ top: 24, right: 32, left: 8, bottom: 18 }}
-                  >
-                    <CartesianGrid
-                      stroke="rgba(255,255,255,0.08)"
-                      strokeDasharray="3 3"
-                    />
-                    <XAxis
-                      dataKey="time_bucket"
-                      stroke="rgba(255,255,255,0.35)"
-                      tick={{ fontSize: 12 }}
-                      minTickGap={28}
-                    />
-                    <YAxis
-                      stroke="rgba(255,255,255,0.35)"
-                      tick={{ fontSize: 12 }}
-                      width={42}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: "rgba(11,21,38,0.96)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        borderRadius: "14px",
-                        color: "#e5eef9",
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="sessions"
-                      stroke="#3dd9ff"
-                      strokeWidth={3}
-                      dot={false}
-                      activeDot={{ r: 5 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="commands"
-                      stroke="#8b5cf6"
-                      strokeWidth={2.4}
-                      dot={false}
-                      activeDot={{ r: 4 }}
-                    />
-                  </LineChart>
+                <BarChart
+  data={timeline}
+  margin={{ top: 28, right: 32, left: 8, bottom: 18 }}
+  barCategoryGap="20%"
+  barGap={6}
+>
+  <defs>
+    <linearGradient id="sessionsBar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.95} />
+      <stop offset="100%" stopColor="#0891b2" stopOpacity={0.55} />
+    </linearGradient>
+
+    
+  </defs>
+
+  <CartesianGrid
+    stroke="rgba(255,255,255,0.07)"
+    strokeDasharray="3 3"
+    vertical={false}
+  />
+<XAxis
+  dataKey="timestamp"
+  tickFormatter={(val) =>
+    new Date(val).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+    })
+  }
+  stroke="rgba(255,255,255,0.35)"
+  tick={{ fontSize: 12, fill: "rgba(226,232,240,0.65)" }}
+  minTickGap={28}
+  axisLine={false}
+  tickLine={false}
+/>
+  <YAxis
+    stroke="rgba(255,255,255,0.35)"
+    tick={{ fontSize: 12, fill: "rgba(226,232,240,0.65)" }}
+    width={42}
+    axisLine={false}
+    tickLine={false}
+  />
+
+  <Tooltip
+  cursor={{ fill: "rgba(148,163,184,0.06)" }}
+  formatter={(value, name) => [
+    Number(value).toLocaleString("en-IN"),
+    name,
+  ]}
+  labelFormatter={(val) =>
+  new Date(val).toLocaleString("en-IN", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
+}
+  contentStyle={{
+    background: "rgba(8,13,26,0.98)",
+    border: "1px solid rgba(148,163,184,0.24)",
+    borderRadius: "16px",
+    color: "#e5eef9",
+    border: "1px solid rgba(148,163,184,0.18)",
+  }}
+  labelStyle={{
+    color: "#f8fafc",
+    fontWeight: 800,
+    marginBottom: 10,
+  }}
+  itemStyle={{
+    color: "#22d3ee",
+    fontWeight: 700,
+  }}
+/>
+
+  <Bar
+  dataKey="sessions"
+  name="Sessions"
+  radius={[10, 10, 0, 0]}
+  barSize={36}
+>
+  {timeline.map((entry, index) => (
+    <Cell
+      key={`cell-${index}`}
+      fill={
+        entry.sessions > 4000
+          ? "#ef4444" // 🔴 spike = red
+          : "url(#sessionsBar)"
+      }
+    />
+  ))}
+</Bar>
+
+ 
+</BarChart>
                 </ResponsiveContainer>
               </div>
             </Section>
