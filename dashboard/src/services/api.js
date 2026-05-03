@@ -53,7 +53,7 @@ export async function getDashboardData() {
     fetchJson(`/analytics/usernames?limit=10&hours=${ANALYTICS_HOURS}`),
     fetchJson(`/analytics/passwords?limit=10&hours=${ANALYTICS_HOURS}`),
     fetchJson(`/analytics/source-ips?limit=10&hours=${ANALYTICS_HOURS}`),
-    fetchJson(`/sessions?page=1&page_size=100`),
+    fetchJson(`/sessions?limit=100`),
     fetchJson("/threats/overview"),
     fetchJson("/threats/malware-attempts"),
     fetchJson("/threats/sensitive-access"),
@@ -89,7 +89,7 @@ export async function getDashboardData() {
 }
 
 export async function getSessions(page = 1, pageSize = 100) {
-  return fetchJson(`/sessions?page=${page}&page_size=${pageSize}`);
+  return fetchJson(`/sessions?limit=100`);
 }
 
 export async function getSessionDetails(sessionId) {

@@ -50,9 +50,9 @@ export default function RecentActivity({
               </div>
 
               <div>
-                <div style={styles.attackSensor}>{s.sensor_region || "Unknown"}</div>
+                <div style={styles.attackSensor}>{sensorLabel(s)}</div>
                 <div style={styles.attackSub}>
-                  {s.sensor_country || "Unknown"} · {s.sensor_provider || "Sensor"}
+                  {s.sensor_id || "pre-sensor"} · {s.sensor_provider || "GhostTrap"}
                 </div>
               </div>
 
@@ -121,5 +121,11 @@ function normalizeCountry(country) {
 function sensorCode(country) {
   if (country === "India") return "IN";
   if (country === "United States") return "US";
+  if (country === "Unknown") return "LEG";
   return "--";
+}
+
+function sensorLabel(s) {
+  if (s.sensor_id === "pre-sensor") return "Legacy / Pre-sensor";
+  return s.sensor_region || s.sensor_country || "Unknown Sensor";
 }

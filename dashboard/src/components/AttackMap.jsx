@@ -516,7 +516,7 @@ function buildSensorStats(sessions = []) {
 
   for (const s of sessions) {
     const sensorId = s.sensor_id || "pre-sensor-data";
-    const isHistorical = sensorId === "pre-sensor-data";
+    const isHistorical = sensorId === "pre-sensor-data" || sensorId === "pre-sensor";
 
     if (!sensors.has(sensorId)) {
       sensors.set(sensorId, {
@@ -603,6 +603,7 @@ function buildSensorStats(sessions = []) {
         "vps-india-01": 1,
         "vps-newjersey-01": 2,
         "pre-sensor-data": 3,
+        "pre-sensor": 3,
       };
 
       const aOrder = order[a.sensor_id] || 99;
