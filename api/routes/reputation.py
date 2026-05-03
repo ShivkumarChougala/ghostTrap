@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from database.connection import get_db_connection
+from database.db import get_db_connection
 
 router = APIRouter(prefix="/reputation", tags=["ReputationWatch"])
 

@@ -42,7 +42,7 @@ def get_attacker_time(start_time, attacker_timezone):
     summary="Recent sessions",
     description="Internal-only endpoint returning recent honeypot sessions for dashboard and admin use.",
 )
-def get_sessions(limit: int = Query(20, ge=1, le=100, description="Maximum number of results")):
+def get_sessions(limit: int = Query(50000, ge=1, le=100000, description="Maximum number of results")):
     conn = get_db_connection()
     cur = conn.cursor()
 
@@ -63,6 +63,10 @@ def get_sessions(limit: int = Query(20, ge=1, le=100, description="Maximum numbe
                 i.longitude,
                 s.honeypot,
                 s.vm,
+                s.sensor_id,
+                s.sensor_country,
+                s.sensor_region,
+                s.sensor_provider,
                 s.total_commands,
                 s.ai_calls,
                 s.start_time,
@@ -122,6 +126,10 @@ def get_session_detail(session_id: str):
                 i.longitude,
                 s.honeypot,
                 s.vm,
+                s.sensor_id,
+                s.sensor_country,
+                s.sensor_region,
+                s.sensor_provider,
                 s.total_commands,
                 s.ai_calls,
                 s.start_time,
