@@ -37,6 +37,7 @@ const API_BASE =
 
 export default function App() {
   const [summary, setSummary] = useState(null);
+  const [summary24h, setSummary24h] = useState(null);
   const [liveOverview, setLiveOverview] = useState(null);
 
   const [timeline, setTimeline] = useState([]);
@@ -78,6 +79,7 @@ export default function App() {
       await loadLiveOverview();
 
       setSummary(data.summary || data);
+      setSummary24h(data.summary24h || {});
       setTimeline(Array.isArray(data.timeline) ? data.timeline : []);
       setTopCommands(Array.isArray(data.topCommands) ? data.topCommands : []);
       setTopUsernames(Array.isArray(data.topUsernames) ? data.topUsernames : []);
@@ -147,30 +149,11 @@ export default function App() {
     });
   }, [recentSessions, search]);
 
-  const sumTimelineField = (field) => {
-    return timeline.reduce((sum, row) => sum + Number(row?.[field] || 0), 0);
-  };
-
-  const getAddedMetric = ({ totalKey, addedKeys, timelineKey }) => {
-    const total = Number(summary?.[totalKey] || 0);
-    let added = null;
-
-    for (const key of addedKeys) {
-      if (summary?.[key] !== undefined && summary?.[key] !== null) {
-        added = Number(summary[key]);
-        break;
-      }
-    }
-
-    if (added === null && timelineKey) {
-      added = sumTimelineField(timelineKey);
-    }
-
-    if (added === null || Number.isNaN(added)) {
-      return "0 added in last 24h";
-    }
-
+  const getAddedMetric = (key) => {
+    const total = Number(summary?.[key] || 0);
+    const added = Number(summary24h?.[key] || 0);
     const percent = total > 0 ? ((added / total) * 100).toFixed(1) : "0.0";
+
     return `+${formatNumber(added)} in last 24h · ${percent}% of total`;
   };
 
@@ -287,11 +270,7 @@ export default function App() {
             <StatCard
               title="Total Sessions"
               value={summary?.total_sessions}
-              subtitle={getAddedMetric({
-                totalKey: "total_sessions",
-                addedKeys: ["sessions_24h", "total_sessions_24h", "new_sessions_24h"],
-                timelineKey: "sessions",
-              })}
+              subtitle={getAddedMetric("total_sessions")}
               icon={Activity}
               styles={styles}
             />
@@ -299,23 +278,15 @@ export default function App() {
             <StatCard
               title="Login Attempts"
               value={summary?.login_attempts}
-              subtitle={getAddedMetric({
-                totalKey: "login_attempts",
-                addedKeys: ["login_attempts_24h", "attempts_24h", "new_login_attempts_24h"],
-                timelineKey: "login_attempts",
-              })}
+              subtitle={getAddedMetric("login_attempts")}
               icon={Users}
               styles={styles}
             />
 
             <StatCard
-              title="Commands Logged "
+              title="Commands Logged"
               value={summary?.commands_logged}
-              subtitle={getAddedMetric({
-                totalKey: "commands_logged",
-                addedKeys: ["commands_24h", "commands_logged_24h", "new_commands_24h"],
-                timelineKey: "commands",
-              })}
+              subtitle={getAddedMetric("commands_logged")}
               icon={Terminal}
               styles={styles}
             />
@@ -323,11 +294,7 @@ export default function App() {
             <StatCard
               title="Enriched IPs"
               value={summary?.enriched_ips}
-              subtitle={getAddedMetric({
-                totalKey: "enriched_ips",
-                addedKeys: ["enriched_ips_24h", "new_enriched_ips_24h", "ip_enrichment_24h"],
-                timelineKey: "enriched_ips",
-              })}
+              subtitle={getAddedMetric("enriched_ips")}
               icon={Globe}
               styles={styles}
             />

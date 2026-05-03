@@ -34,6 +34,7 @@ function normalize(items = [], key) {
 export async function getDashboardData() {
   const [
     summary,
+    summary24h,
     timeline,
     commands,
     usernames,
@@ -46,6 +47,7 @@ export async function getDashboardData() {
     ipIntelSummary,
   ] = await Promise.all([
     fetchJson(`/overview?hours=${ANALYTICS_HOURS}`),
+    fetchJson(`/overview?hours=24`),
     fetchJson(`/overview/timeline?hours=${ANALYTICS_HOURS}&interval=day`),
     fetchJson(`/analytics/commands?limit=10&hours=${ANALYTICS_HOURS}`),
     fetchJson(`/analytics/usernames?limit=10&hours=${ANALYTICS_HOURS}`),
@@ -60,6 +62,7 @@ export async function getDashboardData() {
 
   return {
     summary: unwrap(summary, {}),
+    summary24h: unwrap(summary24h, {}),
 
     timeline: unwrap(timeline, []).map((t) => ({
       ...t,

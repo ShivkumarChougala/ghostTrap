@@ -3,12 +3,9 @@ import { useEffect, useState } from "react";
 export default function Sidebar() {
   const items = [
     { label: "Overview", id: "overview" },
-    { label: "Commands", id: "commands" },
-    { label: "Credentials", id: "credentials" },
-    { label: "Source IPs", id: "source-ips" },
+    { label: "Access Attempts", id: "credentials" },
     { label: "Attack Map", id: "attack-map" },
     { label: "IP Intelligence", id: "ip-intel" },
-    { label: "Alerts", id: "alerts" },
     { label: "Sessions", id: "sessions" },
   ];
 

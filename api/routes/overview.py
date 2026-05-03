@@ -46,9 +46,12 @@ def get_overview(hours: int = Query(24, ge=1, le=8760, description="Time window 
 
         cur.execute(
             """
-            SELECT COUNT(DISTINCT ip) AS enriched_ips
-            FROM ip_intel
-            """
+            SELECT COUNT(DISTINCT s.src_ip) AS enriched_ips
+            FROM sessions s
+            JOIN ip_intel i ON s.src_ip = i.ip
+            WHERE s.start_time >= NOW() - (%s || ' hours')::interval
+            """,
+            (hours,)
         )
         enriched_ips = cur.fetchone()["enriched_ips"]
 
@@ -69,7 +72,7 @@ def get_overview(hours: int = Query(24, ge=1, le=8760, description="Time window 
                 "login_attempts": login_attempts,
                 "commands_logged": commands_logged,
                 "enriched_ips": enriched_ips,
-                "ai_calls": ai_calls
+                "ai_calls": ai_calls,
             }
         }
     finally:

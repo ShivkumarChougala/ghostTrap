@@ -8,7 +8,7 @@ from api.routes.analytics import router as analytics_router
 from api.routes.sessions import router as sessions_router
 
 from api.routes.threats import router as threats_router
-
+from api.routes import reputation
 
 app = FastAPI(
     title="GhostTrap API",
@@ -35,3 +35,4 @@ app.include_router(overview_router, prefix="/api/v1")
 app.include_router(analytics_router, prefix="/api/v1")
 app.include_router(sessions_router, prefix="/api/v1")
 app.include_router(threats_router, prefix="/api/v1")
+app.include_router(reputation.router, prefix="/api/v1")
