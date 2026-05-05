@@ -494,8 +494,8 @@ export default function App() {
 
           <div id="sessions">
             <Section
-              title="Recent Sessions"
-              subtitle="Latest attacker sessions with quick telemetry view"
+              title="Session Intelligence Feed"
+              subtitle="Attacker sessions enriched with origin, sensor, intent, activity, and risk context"
               right={<span style={styles.muted}>Updated: {lastUpdated || "-"}</span>}
               styles={styles}
             >
